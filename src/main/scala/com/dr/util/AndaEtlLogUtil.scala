@@ -1,11 +1,11 @@
-package com.dr.etl.util
+package com.dr.util
 
-import com.dr.etl.model.{EtlLogModel, LogLevelModel, LogTypeModel, PropertiesValueModel}
+import com.dr.model.{EtlLogModel, LogLevelModel, LogTypeModel, PropertiesValueModel}
 
 /**
   * etl 日志管理工具
   */
-object MyjEtlLogUtil {
+object AndaEtlLogUtil {
   private final val LOG_TO_SQL_SERVER_ON_OR_OFF = PropertiesValueModel.getMyjLogToSqlServerOpenOrNot()
 
 
@@ -21,9 +21,10 @@ object MyjEtlLogUtil {
     */
   def myjEtlLogProduce(dataDay: String, msg: String, logLevel: String, logType: String,
                        logToSqlServerOpen: Boolean = LOG_TO_SQL_SERVER_ON_OR_OFF): Unit = {
-    if (logToSqlServerOpen) {
-      val etlLogModel: EtlLogModel = EtlLogModel(dataDay, msg, _banner = "R10001",
+    if (logToSqlServerOpen) {   //开启功能。
+      val etlLogModel: EtlLogModel = EtlLogModel(dataDay, msg, _banner = "R10003",
         _logType = logType, _logLevel = logLevel)
+
       val sql = "insert into leo_etl_log(data_day,banner,msg,log_level,timestamp,host_address,hostname,log_type)" +
         s"values(?,?,?,?,?,?,?,?)"
       val params = Array[String](etlLogModel.day, etlLogModel.banner, etlLogModel.msg, etlLogModel.logLevel,

@@ -1,6 +1,6 @@
-package com.dr.etl.model
+package com.dr.model
 
-import com.dr.etl.util.PropertiesUtil
+import com.dr.util.PropertiesUtil
 
 /**
   * properties文件中键值对，值得数据模型类

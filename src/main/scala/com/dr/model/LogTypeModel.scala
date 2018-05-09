@@ -1,4 +1,4 @@
-package com.dr.etl.model
+package com.dr.model
 
 object LogTypeModel {
   //etl日志

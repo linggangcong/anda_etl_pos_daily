@@ -1,4 +1,4 @@
-package com.dr.etl.util
+package com.dr.util
 
 import java.util.Properties
 

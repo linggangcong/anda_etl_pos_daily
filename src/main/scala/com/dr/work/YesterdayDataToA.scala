@@ -1,33 +1,23 @@
 
-package com.dr.main
+package com.dr.work
 
 import java.text.SimpleDateFormat
 import java.util.Calendar
 
 import com.dr.banner.posProductProcessor
 import com.dr.util.LoadDataUtil
-import com.dr.work.HistoryDataToA_DateRange
 import org.apache.log4j.Logger
 import org.apache.spark.sql.types._
 import org.apache.spark.sql.{SaveMode, SparkSession}
 
 /**
-  * 处理历史交易数据到流水A表 156hadooprdd
+  * 处理历史交易数据到流水A表,单纯的处理前一天的数据。
   */
-object HistoryDataToA {
-  val logger = Logger.getLogger(HistoryDataToA.getClass)
+object YesterdayDataToA {
+  val logger = Logger.getLogger(YesterdayDataToA.getClass)
 
-  def main(args: Array[String]): Unit = {
-    /*if (args.length != 1) {
-      logger.error("请输入历史交易数据的路径!")
-      System.exit(1)
-    }
-    val inputPath = args(0)*/
-
-
+  def etlNomal(): Unit = {
     val banner_code = "R10003"
-
-
     //初始化SparkSession
     val spark = SparkSession
       .builder()
@@ -47,42 +37,15 @@ object HistoryDataToA {
 
     //获取输入路径的日期字符串。
     val   cal   =   Calendar.getInstance()
-
-
-    //判断今天是否时周日 周一
     cal.add(Calendar.DATE,   -1)
     val yesterdayDirectory = new SimpleDateFormat( "yyyyMMdd").format(cal.getTime()) //昨天数据文件夹名
-    cal.add(Calendar.DATE,   -1)
-    val dayBeforeyesterdayDirectory = new SimpleDateFormat( "yyyyMMdd").format(cal.getTime())
-    cal.add(Calendar.DATE,   +2)   //复原日历日期到今天。
-    if(cal.get(Calendar.DAY_OF_WEEK)==Calendar.SUNDAY){
-      logger.error("今天是周日，不执行程序")
-      System.exit(1)
-    }else if(cal.get(Calendar.DAY_OF_WEEK)==Calendar.MONDAY){
-      logger.error("今天是周一，清洗两天的数据")
-      HistoryDataToA_DateRange.etlDateRange(dayBeforeyesterdayDirectory ,yesterdayDirectory )
-    }else{
-      logger.error("今天不是周日，也不是周一，正常执行程序，清洗昨天数据")
-
-    }
-
-
-
-
-
-
-
-
-
 
     //加载数据文件，并改编码。
-    val inputPathPrifix ="hdfs://malogic/usr/samgao/input/anda/20180424"        //测试使用20180424。 yesterdayDirectory
-    //val inputPathPrifix ="hdfs://192.168.0.151:9000/usr/samgao/input/anda/20180424"                  //yesterdayDirectory
+    val inputPathPrifix ="hdfs://malogic/usr/samgao/input/anda/"+yesterdayDirectory        // PRODUCT
+    //val inputPathPrifix ="hdfs://192.168.0.151:9000/usr/samgao/input/anda/20180424"       //yesterdayDirectory
 
     val posProductRDD= LoadDataUtil.loadFileToRdd(sc, inputPathPrifix+"/实物流水*", "GBK")  //返回RDD[(String ,String)] 实物流水数据  hdfs://192.168.0.151:9000/user/root/input/anda_pos/201[5678]*/实物*
-
     val posMoneyRDD = LoadDataUtil.loadFileToRdd(sc, inputPathPrifix+"/金额流水*", "GBK")    //金额流水数据  hdfs://192.168.0.151:9000/user/root/input/anda_pos/201[5678]*/金额*
-
     val promotionRDD = LoadDataUtil.loadFileToRdd(sc,inputPathPrifix+"/*/", "GBK")      //读取所有的文件
     //promotionRDD.take(100).foreach(x => prinltn(x))
 
@@ -109,7 +72,6 @@ object HistoryDataToA {
     //  三个DF。联表，生成A表。
     val original_sale_detail = buy_productpos_df.join(buy_moneypos_df,
       buy_productpos_df("flow_no") === buy_moneypos_df("flow_no_m"), "left")
-
     .join(dr_goods_df, buy_productpos_df("good_code") === dr_goods_df("gid"), "left")
     .select("bar_code", "flow_no", "banner_code", "retailer_shop_code", "good_code", "trade_date_time",
       "trade_date_timestamp", "card_code", "quantity", "price", "amount", "pay_type","is_useful", "day", "banner")

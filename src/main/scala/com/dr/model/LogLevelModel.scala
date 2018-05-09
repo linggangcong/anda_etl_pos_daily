@@ -1,4 +1,4 @@
-package com.dr.etl.model
+package com.dr.model
 
 /**
   * 日志等级类型

@@ -1,4 +1,4 @@
-package com.dr.etl.util
+package com.dr.util
 
 /**
   * 网络工具类

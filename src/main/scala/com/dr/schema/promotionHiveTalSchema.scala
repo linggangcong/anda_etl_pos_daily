@@ -7,7 +7,7 @@ import org.apache.spark.sql.types._
   */
 
 
-object BannerBuySchema {    //https://blog.csdn.net/bitcarmanlee/article/details/52006718
+object promotionHiveTalSchema {    //https://blog.csdn.net/bitcarmanlee/article/details/52006718
   /**
     * 零售商数据模型类
     * bar_code            条形码
@@ -27,26 +27,19 @@ object BannerBuySchema {    //https://blog.csdn.net/bitcarmanlee/article/details
     * day                时间
     * banner             零售商
     */
-  val bar_code = StructField("bar_code", StringType, true)   //常量  常量名指向一个类型的对象。  对象参数。
-  val flow_no = StructField("flow_no", StringType, true)
-  val banner_code = StructField("banner_code", StringType, true)
+  val promotion_code = StructField("promotion_code", StringType, true)   //常量  常量名指向一个类型的对象。  对象参数。
+  val promotion_good_id = StructField("promotion_good_id", StringType, true)
+  val promotion_shop_id = StructField("promotion_shop_id", StringType, true)
   //val pos_no = StructField("pos_no", StringType, true)
-  val retailer_shop_code = StructField("retailer_shop_code", StringType, true)
-  val good_code = StructField("good_code", StringType, true)
-  val trade_date_time = StructField("trade_date_time", StringType, true)
-  val trade_date_timestamp = StructField("trade_date_timestamp", LongType, true)
-  val card_code = StructField("card_code", StringType, true)
-  val quantity = StructField("quantity", FloatType, true)
-  val price = StructField("price", FloatType, true)
-  val amount = StructField("amount", FloatType, true)
-  //val pay_type = StructField("pay_type", StringType, true)
-  //val is_useful = StructField("is_useful", IntegerType, true)
-  val day = StructField("day", StringType, true)
-  val banner = StructField("banner", StringType, true)
+  val promotion_type = StructField("promotion_type", StringType, true)
+  val promotion_start= StructField("promotion_start", LongType, true)
+  val promotion_end= StructField("promotion_end", LongType, true)
+  val promotion_banner= StructField("promotion_banner", StringType, true)
+  val promotion_banner_code = StructField("promotion_banner_code", StringType, true)
 
-  val BannerBuy = StructType(Array(bar_code, flow_no, banner_code, retailer_shop_code,
-    good_code, trade_date_time, trade_date_timestamp, card_code, quantity, price, amount,
-     day, banner))
+
+  val promotionHiveTal = StructType(Array(promotion_code, promotion_good_id, promotion_shop_id, promotion_type,
+    promotion_start, promotion_end, promotion_banner,promotion_banner_code))
 
 
 }
