@@ -6,8 +6,7 @@ import com.dr.model.{EtlLogModel, LogLevelModel, LogTypeModel, PropertiesValueMo
   * etl 日志管理工具
   */
 object AndaEtlLogUtil {
-  private final val LOG_TO_SQL_SERVER_ON_OR_OFF = PropertiesValueModel.getMyjLogToSqlServerOpenOrNot()
-
+  private final val LOG_TO_SQL_SERVER_ON_OR_OFF = PropertiesValueModel.getMyjLogToSqlServerOpenOrNot
 
   /**
     * 美宜佳日志信息生成并插入到SQL server数据库中
@@ -25,10 +24,10 @@ object AndaEtlLogUtil {
       val etlLogModel: EtlLogModel = EtlLogModel(dataDay, msg, _banner = "R10003",
         _logType = logType, _logLevel = logLevel)
 
-      val sql = "insert into leo_etl_log(data_day,banner,msg,log_level,timestamp,host_address,hostname,log_type)" +
+      val sql = "insert into leo_etl_log(data_day,banner,msg,log_level,timestamp,host_address,hostname,log_type,worker)" +
         s"values(?,?,?,?,?,?,?,?)"
       val params = Array[String](etlLogModel.day, etlLogModel.banner, etlLogModel.msg, etlLogModel.logLevel,
-        etlLogModel.timestamp, etlLogModel.IP, etlLogModel.hostname, etlLogModel.logType)
+        etlLogModel.timestamp, etlLogModel.IP, etlLogModel.hostname, etlLogModel.logType,etlLogModel.worker)
       SqlServerUtil.insert(sql, params)
     }
   }
@@ -43,7 +42,7 @@ object AndaEtlLogUtil {
     myjEtlLogProduce(dataDay, msg, LogLevelModel.SUCCESS_LOG, LogTypeModel.ETL_LOG)
   }
 
-  def produceEtlMyjInfoLog(dataDay: String, msg: String): Unit = {
+  def produceEtlAndaInfoLog(dataDay: String, msg: String): Unit = {
     myjEtlLogProduce(dataDay, msg, LogLevelModel.INFO_LOG, LogTypeModel.ETL_LOG)
   }
 

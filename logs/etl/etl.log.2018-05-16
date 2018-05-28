@@ -1,0 +1,7 @@
+[ERROR] [2018-05-16 17:18:13] [LoadDataUtil$:loadFileToRdd:32] 数据文件路径不存在！
+[ERROR] [2018-05-16 17:21:34] [LoadDataUtil$:loadFileToRdd:32] 数据文件路径不存在！
+[ERROR] [2018-05-16 17:23:49] [LoadDataUtil$:loadFileToRdd:32] 数据文件路径不存在！
+[ERROR] [2018-05-16 17:24:59] [LoadDataUtil$:loadFileToRdd:32] 数据文件路径不存在！
+[ERROR] [2018-05-16 17:30:12] [LoadDataUtil$:loadFileToRdd:32] 数据文件路径不存在！
+[ERROR] [2018-05-16 17:31:51] [LoadDataUtil$:loadFileToRdd:32] 数据文件路径不存在！
+[ERROR] [2018-05-16 17:33:50] [ObjectStore:checkSchema:6684] Version information found in metastore differs 2.1.0 from expected schema version 1.2.0. Schema verififcation is disabled hive.metastore.schema.verification so setting version.

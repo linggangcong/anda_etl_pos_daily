@@ -1,8 +1,7 @@
 package com.dr.util
-
 import java.sql.{DriverManager, ResultSet}
-
 import jodd.util.PropertiesUtil
+import scala.collection.mutable.ArrayBuffer
 
 /**
   * sqlServer数据库的连接帮助类
@@ -62,18 +61,17 @@ object SqlServerUtil {
     resultList
   }
 
-  def getLatestSuccessDay(sql: String): String ={    //  banner=R10003 , data_day最近，而且 log_level全部非error。
+  def getLatestDay(sql: String,colName:String): List[String] ={           //banner=R10003 , data_day最近，而且 log_level全部非error。       获取最近有error的数据日期
+
+    var resultList: List[String] = List()
     Class.forName("com.microsoft.sqlserver.jdbc.SQLServerDriver").newInstance()
     val conn = DriverManager.getConnection(SQL_SERVER_CONN_URL)
-    var latestSuccessDay: String =""
     // println("hello")
     try {
       // Configure to be Read Only
       val statement = conn.createStatement(ResultSet.TYPE_FORWARD_ONLY, ResultSet.CONCUR_READ_ONLY)
-
       // Execute Query
       val rs: ResultSet = statement.executeQuery(sql)
-
       // Iterate Over ResultSet
       while (rs.next) {
         resultList = resultList ++ List(rs.getString(colName))
@@ -87,7 +85,7 @@ object SqlServerUtil {
     finally {
       conn.close
     }
-    latestSuccessDay
+    resultList
   }
 
 }
