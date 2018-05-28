@@ -23,8 +23,9 @@ object HistoryDataToA_DateRange {
       .builder()
       .appName("anda_etl_pos_history_job")
       .enableHiveSupport()
-      .config("hive.exec.dynamic.partition", true)             // 支持 Hive 动态分区
+      .config("hive.exec.dynamic.partition", true)             //支持Hive动态分区
       .config("hive.exec.dynamic.partition.mode", "nonstrict")
+      .config("fs.defaultFS", "hdfs://malogic")
       .getOrCreate()
     val sc = spark.sparkContext
     val HCtx=new HiveContext(sc)
@@ -47,17 +48,14 @@ object HistoryDataToA_DateRange {
     //对List[String] 日期列表遍历，加载数据文件，并改编码。
     for (date <- date_list) {
       //logger.info(date)
-
       val inputPathPrifix ="hdfs://malogic/usr/samgao/input/anda/" + date    //测试使用20180424。 yesterdayDirectory
       //val inputPathPrifix ="hdfs://192.168.0.151:9000/usr/samgao/input/anda/" + date                 //yesterdayDirectory
-
       posProductRDD= LoadDataUtil.loadFileToRdd(sc, inputPathPrifix+"/实物流水*", "GBK" ,endDate)  //返回RDD[(String ,String)] 实物流水数据
       posMoneyRDD = LoadDataUtil.loadFileToRdd(sc, inputPathPrifix+"/金额流水*", "GBK" ,endDate)    //金额流水数据
     }
 
     promotionRDD = LoadDataUtil.loadFileToRdd(sc,"hdfs://malogic/usr/samgao/input/anda/" + endDate+"/*/", "GBK",endDate)
     dimProductRDD = LoadDataUtil.loadFileToRdd(sc,"hdfs://malogic/usr/samgao/input/anda/" + endDate+"/商品档案表*", "GBK",endDate)
-
     //promotionRDD = LoadDataUtil.loadFileToRdd(sc,"hdfs://192.168.0.151:9000/usr/samgao/input/anda/" + endDate+"/*/", "GBK" ,endDate) //TEST
     //dimProductRDD = LoadDataUtil.loadFileToRdd(sc,"hdfs://192.168.0.151:9000/usr/samgao/input/anda/"+ endDate+"/商品档案表*", "GBK",endDate)  //endDate 处理数据的日期。
     //promotionRDD.take(100).foreach(x => prinltn(x))
@@ -94,17 +92,9 @@ object HistoryDataToA_DateRange {
       "trade_date_timestamp", "card_code", "quantity", "price", "amount", "pay_type","is_useful", "day", "banner")
 
     //保存添加到A表。
-    //HCtx.sql("set hive.exec.dynamic.partition.mode = nonstrict")   // 不严格执行动态分区模式
-    /*original_sale_detail.write.mode(SaveMode.Append)
-      //.option("path", "/etl/original_sale_detail_leo")
-      //.format("parquet")       //默认时parquet.
-      //.partitionBy("day", "banner")   //表已经定义了分区列。
-      .insertInto("ba_model.original_sale_detail")    //报错
-    logger.info("the original buy data load successfully!")
-    val lineNum =original_sale_detail.count()
-    AndaEtlLogUtil.produceEtlAndaInfoLog(endDate, s"今天的实物流水写入Hive的行数：${lineNum}")   // 行数输出*/
-
-    original_sale_detail_df.createOrReplaceTempView("tempView")  //报存到临时表，然后导入A表动态分区。
+    val lineNum =original_sale_detail_df.count()
+    AndaEtlLogUtil.produceEtlAndaInfoLog(endDate, s"今天的实物流水写入Hive的行数：${lineNum}")   // 行数输出
+    original_sale_detail_df.createOrReplaceTempView("tempView")  //保存到临时表，然后导入A表动态分区。
     HCtx.sql("insert into ba_model.original_sale_detail partition(day ,banner) select * from tempView")
 
 
@@ -113,9 +103,6 @@ object HistoryDataToA_DateRange {
     //promotion_df.collect().foreach(println)  //没有输出，test
     //保存促销清洗后的数据。
     promotion_df.write.mode(SaveMode.Overwrite)   //保存添加到促销表，有分区。
-      //.option("path", "/etl/original_sale_detail_leo")
-      //.format("textfile")
-      //.partitionBy("promotion_banner_code")   //报错。
     .insertInto("ba_model.banner_promotion")
     logger.info("banner_promotion data load successfully!")
     //AndaEtlLogUtil.produceEtlMyjInfoLog(endDate, s"今天的实物流水写入Hive的行数：${lineNum}")

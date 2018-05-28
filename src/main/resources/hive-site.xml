@@ -57,13 +57,11 @@
 <property> 
 <name>javax.jdo.option.ConnectionPassword</name> 
 <value>1!deshine</value> 
-</property> 
-
-
-    <property>  
-        <name>hive.support.concurrency</name>  
-        <value>true</value>  
-    </property>  
+</property>
+<property>
+    <name>hive.support.concurrency</name>
+    <value>true</value>
+</property>
 <property>
     <name>hive.enforce.bucketing</name>
     <value>true</value>
