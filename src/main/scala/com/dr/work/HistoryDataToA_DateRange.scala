@@ -1,12 +1,13 @@
 package com.dr.work
 
 import com.dr.banner.posProductProcessor
-import com.dr.util.{AndaEtlLogUtil, LoadDataUtil, TimeUtil}
+import com.dr.util.{AndaEtlLogUtil, LoadDataUtil, SqlServerUtil, TimeUtil}
 import org.apache.log4j.Logger
 import org.apache.spark.rdd.RDD
 import org.apache.spark.sql.hive.HiveContext
 import org.apache.spark.sql.types._
-import org.apache.spark.sql.{SaveMode, SparkSession}
+import org.apache.spark.sql.{DataFrame, SaveMode, SparkSession}
+
 
 /**
   * 处理交易数据（日期时间段）到流水A表 ，不涉及促销表的更新，关联代码要删除。
@@ -25,12 +26,13 @@ object HistoryDataToA_DateRange {
       .enableHiveSupport()
       .config("hive.exec.dynamic.partition", true)             //支持Hive动态分区
       .config("hive.exec.dynamic.partition.mode", "nonstrict")
-      .config("fs.defaultFS", "hdfs://malogic")
+      .config("fs.defaultFS", "hdfs://malogic")     //变动，环境
+
       .getOrCreate()
     val sc = spark.sparkContext
     val HCtx=new HiveContext(sc)
 
-
+    try{
     //获取日期范围内全部文件夹名称。
     val date_list = TimeUtil.getDateListStartAndEnd(startDate, endDate)
 
@@ -46,13 +48,32 @@ object HistoryDataToA_DateRange {
     var dimProductRDD:RDD[(String ,String)]=null
 
     //对List[String] 日期列表遍历，加载数据文件，并改编码。
-    for (date <- date_list) {
+
+   /* for (date <- date_list) {    //一次导入全部日期段的所有数据。一次RDD处理。
       //logger.info(date)
       val inputPathPrifix ="hdfs://malogic/usr/samgao/input/anda/" + date    //测试使用20180424。 yesterdayDirectory
       //val inputPathPrifix ="hdfs://192.168.0.151:9000/usr/samgao/input/anda/" + date                 //yesterdayDirectory
       posProductRDD= LoadDataUtil.loadFileToRdd(sc, inputPathPrifix+"/实物流水*", "GBK" ,endDate)  //返回RDD[(String ,String)] 实物流水数据
       posMoneyRDD = LoadDataUtil.loadFileToRdd(sc, inputPathPrifix+"/金额流水*", "GBK" ,endDate)    //金额流水数据
+    }*/
+
+
+
+    //生成路径，逗号分割，包含多个文件。
+    var posProductPath="";
+    var posMoneyPath="";
+    for (date <- date_list) {    //一次导入全部日期段的所有数据。一次RDD处理。
+      posProductPath =posProductPath+"hdfs://malogic/usr/samgao/input/anda/" + date +"/实物流水*,"
+
+      posMoneyPath= posMoneyPath +"hdfs://malogic/usr/samgao/input/anda/" + date +"/金额流水*,"
     }
+    //去除最后一个逗号
+    posProductPath= posProductPath.substring(0,posProductPath.length - 1)
+    posMoneyPath= posMoneyPath.substring(0,posMoneyPath.length - 1)
+
+    //加载数据，逗号分割路径
+    posProductRDD= LoadDataUtil.loadFileToRdd(sc, posProductPath, "GBK" ,endDate)  //返回RDD[(String ,String)] 实物流水数据
+    posMoneyRDD = LoadDataUtil.loadFileToRdd(sc, posMoneyPath, "GBK" ,endDate)    //金额流水数据
 
     promotionRDD = LoadDataUtil.loadFileToRdd(sc,"hdfs://malogic/usr/samgao/input/anda/" + endDate+"/*/", "GBK",endDate)
     dimProductRDD = LoadDataUtil.loadFileToRdd(sc,"hdfs://malogic/usr/samgao/input/anda/" + endDate+"/商品档案表*", "GBK",endDate)
@@ -91,11 +112,11 @@ object HistoryDataToA_DateRange {
     .select("bar_code", "flow_no", "banner_code", "retailer_shop_code", "good_code", "trade_date_time",
       "trade_date_timestamp", "card_code", "quantity", "price", "amount", "pay_type","is_useful", "day", "banner")
 
-    //保存添加到A表。
+    //保存添加到A表
     val lineNum =original_sale_detail_df.count()
-    AndaEtlLogUtil.produceEtlAndaInfoLog(endDate, s"今天的实物流水写入Hive的行数：${lineNum}")   // 行数输出
-    original_sale_detail_df.createOrReplaceTempView("tempView")  //保存到临时表，然后导入A表动态分区。
-    HCtx.sql("insert into ba_model.original_sale_detail partition(day ,banner) select * from tempView")
+    AndaEtlLogUtil.produceEtlAndaInfoLog(endDate, s"${startDate}---> ${endDate}实物流水写入Hive的行数：${lineNum}")         // 行数输出
+    original_sale_detail_df.createOrReplaceTempView("tempView")                                   //保存到临时表，然后导入A表动态分区。
+    HCtx.sql("insert into ba_model.original_sale_detail partition(day ,banner) select * from tempView")   //考虑overwrite写入。避免重复。
 
 
     //清洗促销数据，返回RDD[Row]
@@ -107,5 +128,55 @@ object HistoryDataToA_DateRange {
     logger.info("banner_promotion data load successfully!")
     //AndaEtlLogUtil.produceEtlMyjInfoLog(endDate, s"今天的实物流水写入Hive的行数：${lineNum}")
     sc.stop()
+    AndaEtlLogUtil.produceEtlAndaSuccessLog(endDate, startDate+"---> " + endDate + "日期段内数据清洗成功")
+
+    //成功，清理所有日志为error的日志记录。
+    val params=null  //随意放一个参数数组。
+    SqlServerUtil.insert("update leo_etl_log set log_level='success_from_error' where  log_level='error'" , params  )
+
+    }catch {
+      case e: Exception => {
+        e.printStackTrace()
+        AndaEtlLogUtil.produceEtlAndaErrorLog(startDate, startDate+"---> " + endDate + "日期段内数据清洗失败")
+        System.exit(1)
+      }
+    }
+
+    //写入B表
+    val original_sale_detail_df: DataFrame = HCtx.table("ba_model.original_sale_detail")    //hive  on spark .
+      .where(s"banner='${banner_code}' and is_useful=1")
+      .filter(s"day between '${startDate}' and '${endDate}'")
+
+    val dr_goods_df = HCtx.table("ba_model.dim_gid_drid_rel")    // 通过零售商商品code,获取DR商品编码。
+      .where(s"banner_code='${banner_code}' ")
+      .select("product_code", "gid")
+
+    val dr_shop_df = HCtx.table("ba_model.dim_shop")   // 通过零售商店铺code,获取DR店铺编码。
+      .where(s"banner_id='${banner_code}'")
+      .select("shop_code", "banner_shop_code")
+
+    val dr_promotion_df = HCtx.table("ba_model.banner_promotion")   //
+      .where(s"promotion_banner='${banner_code}'")
+      .select("promotion_code", "promotion_good_id", "promotion_shop_id",
+        "promotion_type", "promotion_start", "promotion_end")
+
+    import org.apache.spark.sql.functions.udf
+
+    val get_promotion = udf(getPromotion _)
+
+
+    val final_sale_detail = original_sale_detail_df.join(dr_goods_df,
+      original_sale_detail_df("good_code") === dr_goods_df("gid"), "left")
+      .join(dr_shop_df, original_sale_detail_df("retailer_shop_code")
+        === dr_shop_df("banner_shop_code"), "left")
+
+
+
+
+
+
+
   }
+
+
 }
