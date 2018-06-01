@@ -209,7 +209,6 @@ object TimeUtil {
   }*/
 
   def getDateListStartAndEnd(start_date: String, end_date: String) = {   //输入20180423  20180423  返回路径列表Array(String)。
-
     try {
       val dateFormat = new SimpleDateFormat("yyyyMMdd")
       val dateFiled = Calendar.DAY_OF_MONTH

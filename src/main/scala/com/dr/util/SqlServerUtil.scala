@@ -8,7 +8,6 @@ import scala.collection.mutable.ArrayBuffer
   */
 object SqlServerUtil {
   private final val SQL_SERVER_CONN_URL = PropertiesUtil.getValueFromConf("sqlserver.connect.url")
-
   def insert(sql: String, params: Array[String]): Int = {
     var res = 0
     Class.forName("com.microsoft.sqlserver.jdbc.SQLServerDriver").newInstance()
@@ -16,11 +15,15 @@ object SqlServerUtil {
     try {
       // Configure to be Read Only
       val statement = conn.prepareStatement(sql)
-      for (i <- 0 to params.length - 1) {
-        val j = i + 1
-        statement.setString(j, params(i))
+      if(params==null){
+        res = statement.executeUpdate()
+      }else{
+        for (i <- 0 to params.length - 1) {
+          val j = i + 1
+          statement.setString(j, params(i))
+        }
+        res = statement.executeUpdate()
       }
-      res = statement.executeUpdate()
     }
     catch {
       case e: Exception => {

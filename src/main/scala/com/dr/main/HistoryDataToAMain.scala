@@ -24,25 +24,25 @@ object HistoryDataToAMain {
     val banner_code = "R10003"
     val cal = Calendar.getInstance()
     cal.add(Calendar.DATE, -1)
-    val sdf=new SimpleDateFormat("yyyyMMdd")
-    val yesterdayDirectory =sdf .format(cal.getTime())        //昨天数据文件夹名 比如20180502
+      val sdf=new SimpleDateFormat("yyyyMMdd")
+      val yesterdayDirectory =sdf .format(cal.getTime())        //昨天数据文件夹名 比如20180502
 
-    //最近的错误数据天
-    val sqlFindFailure: String = "select data_day from dbo.leo_etl_log where banner='R10003' and log_type='error'"
-    val LatestFailureDayList = SqlServerUtil.getLatestDay(sqlFindFailure, "data_day")
-    val latestFailureDay: String = TimeUtil.getLatestDay(LatestFailureDayList)   //最多一天失败
+      //最近的错误数据天
+      val sqlFindFailure: String = "select data_day from dbo.leo_etl_log where banner='R10003' and log_level='error'"
+      val LatestFailureDayList = SqlServerUtil.getLatestDay(sqlFindFailure, "data_day")
+      val latestFailureDay: String = TimeUtil.getLatestDay(LatestFailureDayList)   //最多一天失败
 
-    //没有错误天，找最近的成功天。
-    val sqlFindSuccess: String = "select data_day from dbo.leo_etl_log where banner='R10003' and log_type='success'"
-    //最近的成功日期，之后的一天。
-    val LatestSuccessDayList = SqlServerUtil.getLatestDay(sqlFindSuccess, "data_day")
-    val latestSuccessDay  = TimeUtil.getLatestDay(LatestSuccessDayList)    //20180505
-    var latestSuccessDate: Date = null
+      //没有错误天，找最近的成功天
+      val sqlFindSuccess: String = "select data_day from dbo.leo_etl_log where banner='R10003' and log_level='success'"
+      //最近的成功日期，之后的一天
+      val LatestSuccessDayList = SqlServerUtil.getLatestDay(sqlFindSuccess, "data_day")
+      val latestSuccessDay  = TimeUtil.getLatestDay(LatestSuccessDayList)    //20180505
+      var latestSuccessDate: Date = null
 
-    if (latestFailureDay != null) {
-      //HistoryDataToA_DateRange.etlDateRange(latestFailureDay, yesterdayDirectory)
-      HistoryDataToA_DateRange.etlDateRange(latestFailureDay, "20180510")
-    }else if (latestSuccessDay != null) {    // 无失败情况。
+      if (latestFailureDay != null) {
+        HistoryDataToA_DateRange.etlDateRange(latestFailureDay, yesterdayDirectory)
+      //HistoryDataToA_DateRange.etlDateRange(latestFailureDay, "20180510")
+    }else if (latestSuccessDay != null) {            //无失败情况。
       try
         latestSuccessDate = sdf.parse(latestSuccessDay)
       catch {
@@ -55,7 +55,7 @@ object HistoryDataToAMain {
       val Plus1Date: Date = cal.getTime
       val LatestSuccessDayPlus1: String = sdf.format(Plus1Date)
       HistoryDataToA_DateRange.etlDateRange(LatestSuccessDayPlus1, yesterdayDirectory)
-    } else System.exit(1)
+    } else System.exit(1)   //
   }
 }
 

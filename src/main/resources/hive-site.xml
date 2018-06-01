@@ -1,71 +1,65 @@
 <?xml version="1.0"?> 
 <?xml-stylesheet type="text/xsl" href="configuration.xsl"?> 
 <configuration> 
-  <property>
-    <name>hive.metastore.schema.verification</name>
-    <value>false</value>   
-    <description>
-      Enforce metastore schema version consistency.
-      True: Verify that version information stored in is compatible with one from Hive jars.  Also disable automatic
-            schema migration attempt. Users are required to manually migrate schema after Hive upgrade which ensures
-            proper metastore schema migration. (Default)
-      False: Warn if the version information stored in metastore doesn't match with one from in Hive jars.
-    </description> 
-  </property> 
-
- <property>
-    <name>datanucleus.schema.autoCreateAll</name>
-    <value>true</value>
-  </property>
- <property>
-    <name>hive.auto.convert.join</name>
-    <value>false</value>
-  </property>
-
+      <property>
+        <name>hive.metastore.schema.verification</name>
+        <value>false</value>
+        <description>
+          Enforce metastore schema version consistency.
+          True: Verify that version information stored in is compatible with one from Hive jars.  Also disable automatic
+                schema migration attempt. Users are required to manually migrate schema after Hive upgrade which ensures
+                proper metastore schema migration. (Default)
+          False: Warn if the version information stored in metastore doesn't match with one from in Hive jars.
+        </description>
+      </property>
+     <property>
+        <name>datanucleus.schema.autoCreateAll</name>
+        <value>true</value>
+      </property>
+     <property>
+        <name>hive.auto.convert.join</name>
+        <value>false</value>
+      </property>
    <property>
        <name>hive.server2.enable.impersonation</name>
        <description>Enable user impersonation for HiveServer2</description>
        <value>true</value>
    </property>
-
    <property>  
-	<name>hive.server2.thrift.port</name>  
-	<value>10000</value>  
+        <name>hive.server2.thrift.port</name>
+        <value>10000</value>
    </property>  
    <property>  
-	<name>hive.server2.thrift.bind.host</name>  
-	<value>192.168.0.185</value>
-   </property>  
-
-
-
-<property>
-<name>hive.metastore.warehouse.dir</name> 
-<value>/opt/hadoop-data/hive/warehouse</value> 
-</property>
-<property>
-<name>javax.jdo.option.ConnectionURL</name> 
-<value>jdbc:mysql://192.168.0.184/hive?createDatabaseIfNotExist=true</value> 
-</property>
-<property> 
-<name>javax.jdo.option.ConnectionDriverName</name> <value>com.mysql.jdbc.Driver</value> 
-</property>
-<property> 
-<name>javax.jdo.option.ConnectionUserName</name> 
-<value>root</value> 
-</property>
-<property> 
-<name>javax.jdo.option.ConnectionPassword</name> 
-<value>1!deshine</value> 
-</property>
-<property>
-    <name>hive.support.concurrency</name>
-    <value>true</value>
-</property>
-<property>
-    <name>hive.enforce.bucketing</name>
-    <value>true</value>
-</property>
+        <name>hive.server2.thrift.bind.host</name>
+        <value>192.168.0.185</value>
+   </property>
+    <property>
+        <name>hive.metastore.warehouse.dir</name>
+        <value>/opt/hadoop-data/hive/warehouse</value>
+    </property>
+    <property>
+        <name>javax.jdo.option.ConnectionURL</name>
+        <value>jdbc:mysql://192.168.0.184/hive?createDatabaseIfNotExist=true</value>
+    </property>
+    <property>
+        <name>javax.jdo.option.ConnectionDriverName</name> <value>com.mysql.jdbc.Driver</value>
+    </property>
+    <property>
+        <name>javax.jdo.option.ConnectionUserName</name>
+        <value>root</value>
+    </property>
+    <property>
+        <name>javax.jdo.option.ConnectionPassword</name>
+        <value>1!deshine</value>
+    </property>
+    <property>
+        <name>hive.support.concurrency</name>
+        <value>true</value>
+    </property>
+    <property>
+        <name>hive.enforce.bucketing</name>
+        <value>true</value>
+    </property>
     <property>  
         <name>hive.exec.dynamic.partition.mode</name>  
         <value>nonstrict</value>  

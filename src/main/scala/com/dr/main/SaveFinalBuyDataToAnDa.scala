@@ -1,4 +1,3 @@
-/*
 package com.dr.work
 
 import org.apache.log4j.Logger
@@ -27,6 +26,7 @@ object SaveFinalBuyDataToAnDa {    //提取hive内的数据，生成DataFrame.  
       endDate = args(2)
     }
     val banner_code = args(0)
+
     //删除分区数据，重刷最终流水
     val original_sale_detail_df: DataFrame = hiveContext.table("ba_model.original_sale_detail")    //hive  on spark .
       .where(s"banner='${banner_code}' and is_useful=1")
@@ -48,7 +48,7 @@ object SaveFinalBuyDataToAnDa {    //提取hive内的数据，生成DataFrame.  
 //    HiveTableUtil.dropBuyDataOfPartition(hiveContext, "ba_model", "sale_transaction_detail", partitions)
 
 
-    val dr_goods_df = hiveContext.table("ba_model.dim_gid_drid_rel") //// 通过零售商商品code,获取DR商品编码。
+    val dr_goods_df = hiveContext.table("ba_model.dim_gid_drid_rel")    // 通过零售商商品code,获取DR商品编码。
       .where(s"banner_code='${banner_code}' ")
       .select("product_code", "gid")
 
@@ -82,7 +82,7 @@ object SaveFinalBuyDataToAnDa {    //提取hive内的数据，生成DataFrame.  
         "price", "amount", "pay_type", "promotion", "promotion_code", "promotion_type", "day", "banner")
 
 
-    final_sale_detail.write.mode(SaveMode.Append)   //   保存最终表 insert  into sale_transaction_detail 分区表  parquet
+    final_sale_detail.write.mode(SaveMode.Append)      //保存最终表 insert  into sale_transaction_detail 分区表  parquet
       //.option("path", "/etl/sale_transaction_detail_leo")
       .format("parquet")
       .partitionBy("day", "banner")
@@ -95,7 +95,6 @@ object SaveFinalBuyDataToAnDa {    //提取hive内的数据，生成DataFrame.  
     * 判断是否促销
     *
     * @param in_promotion
-    */
   def getPromotion(in_promotion: String) = {
     if (in_promotion == null || in_promotion.trim.length == 0) {
       0

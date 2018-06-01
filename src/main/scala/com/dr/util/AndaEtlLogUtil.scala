@@ -25,7 +25,7 @@ object AndaEtlLogUtil {
         _logType = logType, _logLevel = logLevel)
 
       val sql = "insert into leo_etl_log(data_day,banner,msg,log_level,timestamp,host_address,hostname,log_type,worker)" +
-        s"values(?,?,?,?,?,?,?,?)"
+        s"values(?,?,?,?,?,?,?,?,?)"
       val params = Array[String](etlLogModel.day, etlLogModel.banner, etlLogModel.msg, etlLogModel.logLevel,
         etlLogModel.timestamp, etlLogModel.IP, etlLogModel.hostname, etlLogModel.logType,etlLogModel.worker)
       SqlServerUtil.insert(sql, params)
@@ -38,7 +38,7 @@ object AndaEtlLogUtil {
     * @param dataDay
     * @param msg
     */
-  def produceEtlMyjSuccessLog(dataDay: String, msg: String): Unit = {
+  def produceEtlAndaSuccessLog(dataDay: String, msg: String): Unit = {
     myjEtlLogProduce(dataDay, msg, LogLevelModel.SUCCESS_LOG, LogTypeModel.ETL_LOG)
   }
 
@@ -46,11 +46,11 @@ object AndaEtlLogUtil {
     myjEtlLogProduce(dataDay, msg, LogLevelModel.INFO_LOG, LogTypeModel.ETL_LOG)
   }
 
-  def produceEtlMyjWarnLog(dataDay: String, msg: String): Unit = {
+  def produceEtlAndaWarnLog(dataDay: String, msg: String): Unit = {
     myjEtlLogProduce(dataDay, msg, LogLevelModel.WARN_LOG, LogTypeModel.ETL_LOG)
   }
 
-  def produceEtlMyjErrorLog(dataDay: String, msg: String): Unit = {
+  def produceEtlAndaErrorLog(dataDay: String, msg: String): Unit = {
     myjEtlLogProduce(dataDay, msg, LogLevelModel.ERROR_LOG, LogTypeModel.ETL_LOG)
   }
 }

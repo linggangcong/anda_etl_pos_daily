@@ -1,0 +1,9 @@
+
+
+1, 加载文件模块 ，
+
+2,打包方式： 直接maven package。
+
+3，切换到服务器部署： 改变 三个读取hdfs文件路径。 更换resources文件夹。 .config("fs.defaultFS", "hdfs://malogic")
+
+4，
