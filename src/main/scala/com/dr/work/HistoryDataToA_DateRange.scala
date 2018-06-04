@@ -2,6 +2,7 @@ package com.dr.work
 
 import com.dr.banner.posProductProcessor
 import com.dr.util.{AndaEtlLogUtil, LoadDataUtil, SqlServerUtil, TimeUtil}
+import com.dr.work.SaveFinalBuyDataToAnDa.logger
 import org.apache.log4j.Logger
 import org.apache.spark.rdd.RDD
 import org.apache.spark.sql.hive.HiveContext
@@ -127,8 +128,8 @@ object HistoryDataToA_DateRange {
     .insertInto("ba_model.banner_promotion")
     logger.info("banner_promotion data load successfully!")
     //AndaEtlLogUtil.produceEtlMyjInfoLog(endDate, s"今天的实物流水写入Hive的行数：${lineNum}")
-    sc.stop()
-    AndaEtlLogUtil.produceEtlAndaSuccessLog(endDate, startDate+"---> " + endDate + "日期段内数据清洗成功")
+    //sc.stop()
+    AndaEtlLogUtil.produceEtlAndaSuccessLog(endDate, startDate+"---> " + endDate + "日期段内数据清洗到A表成功")  //成功用endDate
 
     //成功，清理所有日志为error的日志记录。
     val params=null  //随意放一个参数数组。
@@ -137,45 +138,77 @@ object HistoryDataToA_DateRange {
     }catch {
       case e: Exception => {
         e.printStackTrace()
-        AndaEtlLogUtil.produceEtlAndaErrorLog(startDate, startDate+"---> " + endDate + "日期段内数据清洗失败")
+        AndaEtlLogUtil.produceEtlAndaErrorLog(startDate, startDate+"---> " + endDate + "日期段内数据清洗到A表失败")
         System.exit(1)
       }
     }
 
     //写入B表
-    val original_sale_detail_df: DataFrame = HCtx.table("ba_model.original_sale_detail")    //hive  on spark .
-      .where(s"banner='${banner_code}' and is_useful=1")
-      .filter(s"day between '${startDate}' and '${endDate}'")
+    try{
+      val original_sale_detail_df: DataFrame = HCtx.table("ba_model.original_sale_detail")    // A表数据
+        .where(s"banner='${banner_code}' and is_useful=1")
+        .filter(s"day between '${startDate}' and '${endDate}'")
 
-    val dr_goods_df = HCtx.table("ba_model.dim_gid_drid_rel")    // 通过零售商商品code,获取DR商品编码。
-      .where(s"banner_code='${banner_code}' ")
-      .select("product_code", "gid")
+      val dr_goods_df = HCtx.table("ba_model.dim_gid_drid_rel")    // 通过零售商商品code,获取DR商品编码。
+        .where(s"banner_code='${banner_code}' ")
+        .select("product_code", "gid")
 
-    val dr_shop_df = HCtx.table("ba_model.dim_shop")   // 通过零售商店铺code,获取DR店铺编码。
-      .where(s"banner_id='${banner_code}'")
-      .select("shop_code", "banner_shop_code")
+      val dr_shop_df = HCtx.table("ba_model.dim_shop")   // 通过零售商店铺code,获取DR店铺编码。
+        .where(s"banner_id='${banner_code}'")
+        .select("shop_code", "banner_shop_code")
 
-    val dr_promotion_df = HCtx.table("ba_model.banner_promotion")   //
-      .where(s"promotion_banner='${banner_code}'")
-      .select("promotion_code", "promotion_good_id", "promotion_shop_id",
-        "promotion_type", "promotion_start", "promotion_end")
+      val dr_promotion_df = HCtx.table("ba_model.banner_promotion")   //
+        .where(s"promotion_banner='${banner_code}'")
+        .select("promotion_code", "promotion_good_id", "promotion_shop_id",
+          "promotion_type", "promotion_start", "promotion_end")
 
-    import org.apache.spark.sql.functions.udf
+      import org.apache.spark.sql.functions.udf
+      val get_promotion = udf(getPromotion _)
 
-    val get_promotion = udf(getPromotion _)
+      val final_sale_detail = original_sale_detail_df.join(dr_goods_df,
+        original_sale_detail_df("good_code") === dr_goods_df("gid"), "left")
+        .join(dr_shop_df, original_sale_detail_df("retailer_shop_code")
+          === dr_shop_df("banner_shop_code"), "left")                           //左连接， original_sale_detail_df    dr_shop_df   dr_goods_df
+
+        .join(dr_promotion_df, original_sale_detail_df("good_code") === dr_promotion_df("promotion_good_id") and    //dr_promotion_df  多个条件连接
+        original_sale_detail_df("retailer_shop_code") === dr_promotion_df("promotion_shop_id")
+        and original_sale_detail_df("trade_date_timestamp") >= dr_promotion_df("promotion_start") and
+        original_sale_detail_df("trade_date_timestamp") <= dr_promotion_df("promotion_end"), "left")
+        .withColumn("promotion", get_promotion(dr_promotion_df("promotion_type")))
+
+        .select("product_code", "bar_code", "flow_no", "banner_code", "shop_code",
+          "retailer_shop_code", "good_code", "trade_date_time", "card_code", "quantity",
+          "price", "amount", "pay_type", "promotion", "promotion_code", "promotion_type", "day", "banner")
 
 
-    val final_sale_detail = original_sale_detail_df.join(dr_goods_df,
-      original_sale_detail_df("good_code") === dr_goods_df("gid"), "left")
-      .join(dr_shop_df, original_sale_detail_df("retailer_shop_code")
-        === dr_shop_df("banner_shop_code"), "left")
+      final_sale_detail.write.mode(SaveMode.Append)      //保存最终表 insert  into sale_transaction_detail 分区表  parquet
+        //.option("path", "/etl/sale_transaction_detail_leo")
+        .format("parquet")
+        .partitionBy("day", "banner")
+        .saveAsTable("ba_model.sale_transaction_detail")
+      logger.info("the final buy data have loaded in sale_transaction_detail successfully!")
+      AndaEtlLogUtil.produceEtlAndaSuccessLog(endDate, startDate+"---> " + endDate + "日期段内数据到B表成功")
+      sc.stop()
+    }catch {
+      case e: Exception => {
+        e.printStackTrace()
+        AndaEtlLogUtil.produceEtlAndaErrorLog(startDate, startDate+"---> " + endDate + "日期段内数据到B表失败")
+        System.exit(1)
+      }
+    }
+  }
 
-
-
-
-
-
-
+  /**
+    * 判断是否促销
+    *
+    * @param in_promotion
+    */
+  def getPromotion(in_promotion: String) = {
+    if (in_promotion == null || in_promotion.trim.length == 0) {
+      0
+    } else {
+      1
+    }
   }
 
 
